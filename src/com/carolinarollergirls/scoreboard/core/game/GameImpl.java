@@ -182,7 +182,7 @@ public class GameImpl extends ScoreBoardEventProviderImpl<Game> implements Game 
                 @Override
                 public void scoreBoardChange(ScoreBoardEvent<?> event) {
                     if (getBooleanSetting(ScoreBoard.SETTING_AUTO_END_TTO) && (getTimeoutOwner() instanceof Team) &&
-                        (Long) event.getValue() == getLong(Rule.TTO_DURATION)) {
+                        !getCurrentTimeout().isReview() && (Long) event.getValue() == getLong(Rule.TTO_DURATION)) {
                         stopJamTO();
                     }
                     if ((Long) event.getValue() == getLong(Rule.STOP_PC_AFTER_TO_DURATION) &&
@@ -523,6 +523,12 @@ public class GameImpl extends ScoreBoardEventProviderImpl<Game> implements Game 
     }
 
     @Override
+    public boolean isLastTwoMinutes() {
+        return (getClock(Clock.ID_PERIOD).getTimeRemaining() < 120000 &&
+                getCurrentPeriodNumber() == getInt(Rule.NUMBER_PERIODS));
+    }
+
+    @Override
     public boolean isOfficialScore() {
         return get(OFFICIAL_SCORE);
     }
@@ -625,8 +631,6 @@ public class GameImpl extends ScoreBoardEventProviderImpl<Game> implements Game 
         set(CURRENT_PERIOD, getOrCreatePeriod(getCurrentPeriodNumber() + 1));
         if (getBoolean(Rule.JAM_NUMBER_PER_PERIOD)) {
             getUpcomingJam().set(Jam.NUMBER, 1, Source.RENUMBER, Flag.SPECIAL_CASE);
-            // show Jam 0 on the display for the upcoming period
-            scoreBoardChange(new ScoreBoardEvent<>(jc, Clock.NUMBER, 0, jc.getNumber()));
         }
 
         if (getBoolean(Rule.SUDDEN_SCORING)) {
